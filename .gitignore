@@ -37,4 +37,4 @@ fig/
 *.webp
 
 # Local reference checkout (not part of this repo)
-references/
+/references/
