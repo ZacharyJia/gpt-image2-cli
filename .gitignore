@@ -1,0 +1,40 @@
+# Binaries
+gpt-image
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of `go coverage`
+*.out
+
+# Go workspace file
+go.work
+
+# Local env files
+.env
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Generated images
+fig/
+*.png
+*.jpg
+*.jpeg
+*.webp
+
+# Local reference checkout (not part of this repo)
+references/
