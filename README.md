@@ -17,8 +17,34 @@ This project mirrors the Python reference implementation in [`wuyoscar/gpt_image
 
 ## Install
 
+### From Release (recommended)
+
+Download the latest prebuilt binary for your platform from the [Releases](https://github.com/ZacharyJia/gpt-image2-cli/releases/latest) page, or install via the command line:
+
 ```bash
-# Build from source (Go 1.22+)
+# macOS Apple Silicon
+curl -L -o gpt-image "https://github.com/ZacharyJia/gpt-image2-cli/releases/latest/download/gpt-image-darwin-arm64"
+chmod +x gpt-image
+sudo mv gpt-image /usr/local/bin/
+
+# macOS Intel
+curl -L -o gpt-image "https://github.com/ZacharyJia/gpt-image2-cli/releases/latest/download/gpt-image-darwin-amd64"
+chmod +x gpt-image
+sudo mv gpt-image /usr/local/bin/
+
+# Linux AMD64
+curl -L -o gpt-image "https://github.com/ZacharyJia/gpt-image2-cli/releases/latest/download/gpt-image-linux-amd64"
+chmod +x gpt-image
+sudo mv gpt-image /usr/local/bin/
+
+# Windows AMD64 (PowerShell)
+curl -L -o gpt-image.exe "https://github.com/ZacharyJia/gpt-image2-cli/releases/latest/download/gpt-image-windows-amd64.exe"
+```
+
+### Build from source
+
+```bash
+# Build from source (Go 1.26+)
 git clone git@github.com:ZacharyJia/gpt-image2-cli.git
 cd gpt-image2-cli
 go build -o gpt-image ./cmd/gpt-image
