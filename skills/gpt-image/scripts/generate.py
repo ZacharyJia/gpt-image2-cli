@@ -2,12 +2,11 @@
 """Skill launcher for the shared gpt-image CLI.
 
 Resolution order:
-1. Repo checkout / full plugin install: run the compiled gpt-image binary.
-2. Shell has a gpt-image executable: delegate to it.
-3. Go toolchain is available: run `go run ./cmd/gpt-image` from the repo root.
+1. Prebuilt binary inside the skill folder (scripts/, skill root, or cmd/).
+2. A `gpt-image` executable on PATH.
 
-This keeps `skills/gpt-image` usable when copied as a standalone skill folder
-while preserving one canonical implementation for the Go CLI package.
+Agent installers should download the appropriate prebuilt binary from the
+GitHub Release and place it next to this script or in the skill root.
 """
 from __future__ import annotations
 
@@ -17,15 +16,17 @@ import sys
 from pathlib import Path
 
 
-def _find_repo_binary(script_path: Path) -> Path | None:
-    """Look for a prebuilt gpt-image binary relative to the skill folder."""
+def _find_skill_binary(script_path: Path) -> Path | None:
+    """Look for a prebuilt gpt-image binary inside the skill folder."""
+    scripts_dir = script_path.parent
+    skill_root = scripts_dir.parent
     candidates = [
-        # Full repo layout: <repo>/skills/gpt-image/scripts/generate.py
-        script_path.parents[3] / "gpt-image",
-        script_path.parents[3] / "gpt-image.exe",
-        # Or a cmd/gpt-image build artifact
-        script_path.parents[3] / "cmd" / "gpt-image" / "gpt-image",
-        script_path.parents[3] / "cmd" / "gpt-image" / "gpt-image.exe",
+        scripts_dir / "gpt-image",
+        scripts_dir / "gpt-image.exe",
+        skill_root / "gpt-image",
+        skill_root / "gpt-image.exe",
+        skill_root / "cmd" / "gpt-image",
+        skill_root / "cmd" / "gpt-image.exe",
     ]
     for c in candidates:
         if c.is_file():
@@ -42,7 +43,7 @@ def _delegate(command: list[str]) -> int:
 def main() -> int:
     script_path = Path(__file__).resolve()
 
-    binary = _find_repo_binary(script_path)
+    binary = _find_skill_binary(script_path)
     if binary is not None:
         return _delegate([str(binary)])
 
@@ -50,16 +51,11 @@ def main() -> int:
     if executable:
         return _delegate([executable])
 
-    go = shutil.which("go")
-    if go and len(script_path.parents) > 3:
-        repo_root = script_path.parents[3]
-        if (repo_root / "go.mod").is_file() and (repo_root / "cmd" / "gpt-image").is_dir():
-            return _delegate([go, "run", "./cmd/gpt-image"])
-
     print(
-        "error: could not find the gpt-image CLI backend. Build it first with:\n"
-        "  go build -o gpt-image ./cmd/gpt-image\n"
-        "or install a prebuilt binary onto PATH, then retry the same command.",
+        "error: could not find the gpt-image CLI backend. Install a prebuilt binary\n"
+        "into this skill folder (next to generate.py or in the skill root), put it\n"
+        "on PATH, then retry the same command.\n"
+        "Download: https://github.com/ZacharyJia/gpt-image2-cli/releases/latest",
         file=sys.stderr,
     )
     return 2
