@@ -1,5 +1,5 @@
 # Binaries
-gpt-image
+/gpt-image
 *.exe
 *.dll
 *.so
