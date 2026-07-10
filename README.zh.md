@@ -11,7 +11,7 @@
 - 基于 Alpha 通道的局部重绘（`-i` + `-m`）
 - 支持全部主要 OpenAI 图像参数：size、quality、background、moderation、format、compression、user
 - 尺寸简写：`1k`、`2k`、`4k`、`portrait`、`landscape`、`square`、`wide`、`tall`
-- 按 env、`.env`、`~/.env` 顺序读取 `OPENAI_API_KEY` / `API_KEY` 和可选的 `BASE_URL`（进程 env 优先级最高，不会被覆盖）
+- 优先读取 `~/.gpt-image2-cli/config.json`；不存在时再从 env、`.env`、`~/.env` 读取 `OPENAI_API_KEY` / `API_KEY` 和可选的 `BASE_URL`
 - 自动生成输出文件名；若存在 `./fig/` 目录则写入其中
 - 提供 Agent Skill launcher（`skills/gpt-image/scripts/generate.py`）
 
@@ -77,14 +77,25 @@ gpt-image -p "isometric chair, minimalist" -n 4 --background opaque --format web
 
 ## 配置
 
-CLI 按以下顺序读取凭证（进程 env 优先级最高，文件不会覆盖它）：
+推荐使用用户目录下的配置文件 `~/.gpt-image2-cli/config.json`：
+
+```json
+{
+  "api_key": "sk-...",
+  "base_url": "https://your-test-endpoint.example.com/v1"
+}
+```
+
+其中 `api_key` 为必填项；`base_url` 可省略，省略时使用 OpenAI 官方 API 地址。配置文件中包含密钥，请妥善保管。只要这个文件存在，它就是唯一的凭证来源，CLI 不会读取环境变量或 `.env` 文件，因此它对 API Key 和 Base URL 都有最高、明确的优先级。
+
+仅当 `~/.gpt-image2-cli/config.json` 不存在时，CLI 才按原有顺序读取凭证：
 
 1. `OPENAI_API_KEY` 环境变量
 2. `API_KEY` 环境变量（兜底）
 3. `./.env`
 4. `~/.env`
 
-如需使用自定义或测试端点，设置 `BASE_URL`：
+未创建配置文件时，如需使用自定义或测试端点，设置 `BASE_URL`：
 
 ```bash
 export BASE_URL="https://your-test-endpoint.example.com/v1"

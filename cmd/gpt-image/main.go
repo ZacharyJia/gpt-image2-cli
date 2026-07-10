@@ -106,18 +106,17 @@ func main() {
 		os.Exit(2)
 	}
 
-	_ = env.LoadChain()
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		apiKey = os.Getenv("API_KEY")
-	}
-	if apiKey == "" {
-		fmt.Fprintln(os.Stderr, "error: OPENAI_API_KEY (or API_KEY) not set. Add it to env / .env / ~/.env, or use your host agent's native image tool.")
+	credentials, err := env.Resolve()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(2)
 	}
-	baseURL := os.Getenv("BASE_URL")
+	if credentials.APIKey == "" {
+		fmt.Fprintln(os.Stderr, "error: API key not set. Add api_key to ~/.gpt-image2-cli/config.json, or set OPENAI_API_KEY (or API_KEY) in env / .env / ~/.env.")
+		os.Exit(2)
+	}
 
-	client, err := api.New(apiKey, baseURL)
+	client, err := api.New(credentials.APIKey, credentials.BaseURL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(2)

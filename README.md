@@ -11,7 +11,7 @@ This project mirrors the Python reference implementation in [`wuyoscar/gpt_image
 - Alpha-channel inpainting (`-i` + `-m`)
 - All major OpenAI image parameters: size, quality, background, moderation, format, compression, user
 - Size shortcuts: `1k`, `2k`, `4k`, `portrait`, `landscape`, `square`, `wide`, `tall`
-- Reads `OPENAI_API_KEY` (or `API_KEY`) and optional `BASE_URL` from env, `.env`, `~/.env` (process env wins)
+- Reads `~/.gpt-image2-cli/config.json` first, then falls back to `OPENAI_API_KEY` (or `API_KEY`) and optional `BASE_URL` from env, `.env`, `~/.env`
 - Auto-named output files, written to `./fig/` when present
 - Skill launcher (`skills/gpt-image/scripts/generate.py`) for agent runtimes
 
@@ -77,14 +77,25 @@ gpt-image -p "isometric chair, minimalist" -n 4 --background opaque --format web
 
 ## Configuration
 
-The CLI reads credentials in this order (process env wins, files never override it):
+The preferred configuration is the user-scoped file `~/.gpt-image2-cli/config.json`:
+
+```json
+{
+  "api_key": "sk-...",
+  "base_url": "https://your-test-endpoint.example.com/v1"
+}
+```
+
+`api_key` is required; `base_url` is optional and defaults to the official OpenAI API URL. Keep this file private because it contains a secret. When this file exists, it is authoritative and the CLI does not read environment variables or `.env` files. This makes the configuration file the highest-priority, unambiguous source for both settings.
+
+If `~/.gpt-image2-cli/config.json` does not exist, the CLI falls back to its original credential chain:
 
 1. `OPENAI_API_KEY` environment variable
 2. `API_KEY` environment variable (fallback)
 3. `./.env`
 4. `~/.env`
 
-For custom or test endpoints, set `BASE_URL`:
+For custom or test endpoints without a configuration file, set `BASE_URL`:
 
 ```bash
 export BASE_URL="https://your-test-endpoint.example.com/v1"

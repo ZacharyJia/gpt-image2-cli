@@ -1,7 +1,7 @@
 ---
 name: gpt-image
 description: "Use this skill whenever a user asks to generate, create, draw, render, or edit images with GPT Image 2 / gpt-image-2, text-to-image, reference-image editing, inpainting, posters, typography, Chinese text, UI mockups, diagrams, or gallery prompts. Analyze the user's prompt, search the bundled Reference Gallery/craft files for matching design patterns, confer on direction when useful, then call the packaged `gpt-image` CLI. Do not write new image-generation code unless explicitly asked to modify this repo."
-compatibility: "Requires Go 1.22+ to build, or a prebuilt `gpt-image` binary. CLI/API calls read `OPENAI_API_KEY` and may incur OpenAI API charges."
+compatibility: "Requires Go 1.22+ to build, or a prebuilt `gpt-image` binary. CLI/API calls read ~/.gpt-image2-cli/config.json first, then OPENAI_API_KEY, and may incur OpenAI API charges."
 metadata: {"openclaw":{"requires":{"anyBins":["gpt-image","go"]},"primaryEnv":"OPENAI_API_KEY","homepage":"https://github.com/ZacharyJia/gpt-image2-cli"}}
 ---
 
@@ -41,10 +41,10 @@ go run ./cmd/gpt-image -p "PROMPT" [options]
 
 ## Key and cost rules
 
-- CLI reads `OPENAI_API_KEY` (or `API_KEY`) and optional `BASE_URL` from process env, then `.env`, then `~/.env` without overriding existing env; successful API calls may bill the user’s OpenAI account.
-- If host/runtime has native platform-managed image generation and the user wants that path, use the host tool instead of this CLI.
-- If `OPENAI_API_KEY` / `API_KEY` is unset, report missing key or use host-native generation when requested; do not write secrets.
-- If user wants to avoid local-key use, respect `unset OPENAI_API_KEY`/`API_KEY`; if a key exists in `.env`/`~/.env`, tell them to remove/rename it for the session rather than working around it.
+- CLI first checks `~/.gpt-image2-cli/config.json`. The file contains `{"api_key": "...", "base_url": "..."}`; `api_key` is required and `base_url` is optional. If it exists, it is authoritative and the CLI does not use process env, `.env`, or `~/.env`. Successful API calls may bill the user’s OpenAI account.
+- Only when the configuration file is absent, CLI reads `OPENAI_API_KEY` (or `API_KEY`) and optional `BASE_URL` from process env, then `.env`, then `~/.env` without overriding existing env.
+- If the configuration file is absent and `OPENAI_API_KEY` / `API_KEY` is unset, report the missing key or use host-native generation when requested; do not write secrets.
+- If user wants to avoid local-key use, they must remove or rename `~/.gpt-image2-cli/config.json` first; if it is absent, also respect `unset OPENAI_API_KEY`/`API_KEY` and tell them to remove/rename any key in `.env`/`~/.env` for the session rather than working around it.
 - Never print secret values.
 
 ## Flags

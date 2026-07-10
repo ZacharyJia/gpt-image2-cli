@@ -1,14 +1,103 @@
-// Package env resolves OPENAI_API_KEY from process env, .env, and ~/.env
-// without overriding existing environment variables.
+// Package env resolves credentials from the user configuration file or the
+// legacy environment-variable chain.
 package env
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+const configDirName = ".gpt-image2-cli"
+const configFileName = "config.json"
+
+// Config is the user-scoped CLI configuration stored in
+// ~/.gpt-image2-cli/config.json.
+type Config struct {
+	APIKey  string `json:"api_key"`
+	BaseURL string `json:"base_url"`
+}
+
+// Credentials contains the API connection settings used by the CLI.
+type Credentials struct {
+	APIKey  string
+	BaseURL string
+}
+
+// Resolve returns credentials from ~/.gpt-image2-cli/config.json when that
+// file exists. The configuration file is authoritative: it must contain an
+// api_key, and environment variables are not consulted. When the file does
+// not exist, Resolve preserves the legacy env, .env, and ~/.env behavior.
+func Resolve() (Credentials, error) {
+	config, found, err := LoadConfig()
+	if err != nil {
+		return Credentials{}, err
+	}
+	if found {
+		if strings.TrimSpace(config.APIKey) == "" {
+			return Credentials{}, fmt.Errorf("configuration file %s must contain api_key", ConfigPath())
+		}
+		return Credentials{APIKey: config.APIKey, BaseURL: config.BaseURL}, nil
+	}
+
+	_ = LoadChain()
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		apiKey = os.Getenv("API_KEY")
+	}
+	return Credentials{APIKey: apiKey, BaseURL: os.Getenv("BASE_URL")}, nil
+}
+
+// ConfigPath returns the conventional path for the user-scoped configuration
+// file. An empty string means the home directory could not be determined.
+func ConfigPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return ""
+	}
+	return filepath.Join(home, configDirName, configFileName)
+}
+
+// LoadConfig reads the user-scoped configuration file. found is false only
+// when the file does not exist (or the home directory is unavailable).
+func LoadConfig() (config Config, found bool, err error) {
+	path := ConfigPath()
+	if path == "" {
+		return Config{}, false, nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return Config{}, false, nil
+		}
+		return Config{}, true, fmt.Errorf("read configuration file %s: %w", path, err)
+	}
+
+	config, err = parseConfig(data)
+	if err != nil {
+		return Config{}, true, fmt.Errorf("parse configuration file %s: %w", path, err)
+	}
+	return config, true, nil
+}
+
+func parseConfig(data []byte) (Config, error) {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+
+	var config Config
+	if err := decoder.Decode(&config); err != nil {
+		return Config{}, err
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		return Config{}, fmt.Errorf("expected a single JSON object")
+	}
+	return config, nil
+}
 
 // LoadChain loads .env files in order: ./.env then ~/..env.
 // Existing process environment variables are never overwritten.
